@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MFA Under Siege — Design Document</title>
+  <meta name="author" content="Mordecai Shekwogaza">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0e17;
+      --bg2: #111827;
+      --bg3: #1a2332;
+      --border: #2a3a4e;
+      --text: #e8edf5;
+      --text2: #8892a4;
+      --dim: #5a6577;
+      --cyan: #00d4ff;
+      --green: #00ff88;
+      --red: #ff4757;
+      --orange: #f9c74f;
+      --purple: #a78bfa;
+      --radius: 12px;
+      --font: 'Inter', -apple-system, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Navigation */
+    .doc-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(10, 14, 23, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .doc-nav-logo {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--cyan);
+    }
+
+    .doc-nav-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+
+    .doc-nav-links a {
+      color: var(--text2);
+      text-decoration: none;
+      font-size: 0.78rem;
+      transition: color 0.2s;
+    }
+
+    .doc-nav-links a:hover { color: var(--cyan); }
+
+    .doc-nav-cta {
+      padding: 0.4rem 1rem;
+      background: var(--cyan);
+      color: #000;
+      border-radius: 100px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .doc-nav-cta:hover { opacity: 0.9; }
+
+    /* Hero */
+    .doc-hero {
+      padding: 8rem 2rem 4rem;
+      text-align: center;
+      max-width: 750px;
+      margin: 0 auto;
+    }
+
+    .doc-badge {
+      display: inline-block;
+      padding: 0.3rem 0.8rem;
+      border: 1px solid var(--purple);
+      color: var(--purple);
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1.5rem;
+    }
+
+    .doc-hero h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+
+    .doc-hero h1 span { color: var(--cyan); }
+
+    .doc-hero p {
+      font-size: 1.05rem;
+      color: var(--text2);
+      max-width: 550px;
+      margin: 0 auto;
+    }
+
+    /* Main content */
+    .doc-content {
+      max-width: 750px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+    }
+
+    /* Section */
+    .doc-section {
+      margin-bottom: 4rem;
+      scroll-margin-top: 5rem;
+    }
+
+    .section-num {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--cyan);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .doc-section h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .doc-section h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem;
+      color: var(--text);
+    }
+
+    .doc-section p {
+      color: var(--text2);
+      margin-bottom: 1rem;
+      font-size: 0.92rem;
+    }
+
+    .doc-section strong { color: var(--text); }
+
+    /* Cards grid */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .doc-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+
+    .doc-card h4 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .doc-card p {
+      font-size: 0.82rem;
+      color: var(--text2);
+      margin-bottom: 0;
+    }
+
+    .card-cyan { border-left: 3px solid var(--cyan); }
+    .card-green { border-left: 3px solid var(--green); }
+    .card-orange { border-left: 3px solid var(--orange); }
+    .card-red { border-left: 3px solid var(--red); }
+    .card-purple { border-left: 3px solid var(--purple); }
+
+    /* Lists */
+    .doc-list {
+      list-style: none;
+      margin: 0.75rem 0 1rem;
+    }
+
+    .doc-list li {
+      position: relative;
+      padding-left: 1.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.88rem;
+      color: var(--text2);
+    }
+
+    .doc-list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.6em;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+    }
+
+    /* Action mapping table */
+    .action-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.85rem;
+    }
+
+    .action-table th {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .action-table td {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      vertical-align: top;
+    }
+
+    /* Flow diagram */
+    .flow-diagram {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .flow-node {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.6rem 1rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-align: center;
+      min-width: 100px;
+    }
+
+    .flow-node.active { border-color: var(--cyan); color: var(--cyan); }
+    .flow-node.decision { border-color: var(--orange); color: var(--orange); border-radius: 50px; }
+    .flow-node.outcome-good { border-color: var(--green); color: var(--green); }
+    .flow-node.outcome-bad { border-color: var(--red); color: var(--red); }
+
+    .flow-arrow {
+      color: var(--dim);
+      font-size: 1.2rem;
+    }
+
+    /* Highlight box */
+    .highlight-box {
+      background: rgba(0, 212, 255, 0.05);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin: 1rem 0;
+    }
+
+    .highlight-box.purple {
+      background: rgba(167, 139, 250, 0.05);
+      border-color: rgba(167, 139, 250, 0.15);
+    }
+
+    .highlight-box h4 {
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+      color: var(--cyan);
+    }
+
+    .highlight-box.purple h4 { color: var(--purple); }
+
+    .highlight-box p, .highlight-box li {
+      font-size: 0.85rem;
+    }
+
+    /* Metric cards */
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+
+    .metric-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      font-family: var(--mono);
+      color: var(--cyan);
+    }
+
+    .metric-label {
+      font-size: 0.7rem;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.25rem;
+    }
+
+    /* Footer */
+    .doc-footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .doc-footer p {
+      font-size: 0.8rem;
+      color: var(--dim);
+    }
+
+    .doc-footer a { color: var(--cyan); text-decoration: none; }
+    .doc-footer a:hover { text-decoration: underline; }
+
+    /* Tag */
+    .tag {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .tag-cyan { background: rgba(0, 212, 255, 0.1); color: var(--cyan); }
+    .tag-green { background: rgba(0, 255, 136, 0.1); color: var(--green); }
+    .tag-orange { background: rgba(249, 199, 79, 0.1); color: var(--orange); }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .doc-hero { padding: 6rem 1.25rem 3rem; }
+      .doc-hero h1 { font-size: 1.8rem; }
+      .doc-content { padding: 0 1.25rem 3rem; }
+      .doc-nav-links { display: none; }
+      .flow-diagram { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="doc-nav">
+    <div class="doc-nav-logo">MFA Under Siege</div>
+    <ul class="doc-nav-links">
+      <li><a href="#executive-summary">Summary</a></li>
+      <li><a href="#business-goal">Goal</a></li>
+      <li><a href="#target-actions">Actions</a></li>
+      <li><a href="#experience-design">Design</a></li>
+      <li><a href="#gamification">Gamification</a></li>
+      <li><a href="#ai-integration">AI</a></li>
+      <li><a href="#measurement">Measurement</a></li>
+    </ul>
+    <a href="index.html" class="doc-nav-cta">Try the Prototype</a>
+  </nav>
+
+  <!-- Hero -->
+  <header class="doc-hero">
+    <div class="doc-badge">Learning Experience Design Document</div>
+    <h1><span>MFA Under Siege</span><br>Design & Strategy</h1>
+    <p>A scenario-based, interactive security training experience designed using Action Mapping methodology to change real employee behavior — not just check a compliance box.</p>
+  </header>
+
+  <!-- Content -->
+  <main class="doc-content">
+
+    <!-- 1. Executive Summary -->
+    <section class="doc-section" id="executive-summary">
+      <span class="section-num">01</span>
+      <h2>Executive Summary</h2>
+      <p><strong>MFA Under Siege</strong> is an interactive, web-based security training simulation that puts learners in the shoes of "Alex," an employee facing three escalating MFA attack scenarios — each modeled after real breaches at Uber, Twilio, and Cisco.</p>
+      <p>Unlike traditional click-through compliance training, this experience uses <strong>branching scenarios with real consequences</strong>, timed decision-making, and gamification mechanics to create emotional engagement and lasting behavioral change.</p>
+
+      <div class="metric-row">
+        <div class="metric-card">
+          <div class="metric-value">3</div>
+          <div class="metric-label">Attack Scenarios</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">5-8</div>
+          <div class="metric-label">Minutes to Complete</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">9</div>
+          <div class="metric-label">Decision Branches</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">3</div>
+          <div class="metric-label">Real Breach Case Studies</div>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <h4>Key Differentiator</h4>
+        <p>This training is a <strong>live, interactive web application</strong> — not a slideshow. Learners experience attack pressure through timed decisions, realistic UI mockups (phone notifications, Slack messages, phone calls), and immediate consequences. The medium IS the message.</p>
+      </div>
+    </section>
+
+    <!-- 2. Business Goal -->
+    <section class="doc-section" id="business-goal">
+      <span class="section-num">02</span>
+      <h2>Business Goal (Action Mapping Step 1)</h2>
+      <p>Using Cathy Moore's Action Mapping methodology, we start with the measurable business goal — not learning objectives.</p>
+
+      <div class="highlight-box">
+        <h4>Business Goal</h4>
+        <p><strong>Reduce MFA-related account compromises to zero</strong> by ensuring 100% of employees can recognize and correctly respond to the three most common MFA attack vectors: unsolicited push notifications, MFA fatigue/push bombing, and voice-based social engineering (vishing).</p>
+      </div>
+
+      <h3>Why MFA Attacks Matter Now</h3>
+      <ul class="doc-list">
+        <li>MFA fatigue attacks increased <strong>300%+</strong> between 2022-2024 (Mandiant)</li>
+        <li>The Uber breach (2022) — caused by a single MFA push approval — cost an estimated <strong>$30M+</strong> in incident response</li>
+        <li>Social engineering is now the <strong>#1 initial access vector</strong> in enterprise breaches (Verizon DBIR 2024)</li>
+        <li>Traditional security awareness training has a <strong>demonstrably low retention rate</strong> — scenario-based training shows 4x better recall (SANS Institute)</li>
+      </ul>
+    </section>
+
+    <!-- 3. Target Actions -->
+    <section class="doc-section" id="target-actions">
+      <span class="section-num">03</span>
+      <h2>Target Actions (Action Mapping Step 2)</h2>
+      <p>Instead of listing what learners should "know," we define what they should <strong>do</strong> when faced with real threats.</p>
+
+      <table class="action-table">
+        <thead>
+          <tr>
+            <th>Attack Vector</th>
+            <th>Target Behavior</th>
+            <th>Scenario</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Unsolicited MFA Push</td>
+            <td><strong>Deny</strong> the request AND <strong>report</strong> it to IT Security immediately</td>
+            <td><span class="tag tag-green">Scenario 1</span></td>
+          </tr>
+          <tr>
+            <td>MFA Fatigue / Push Bombing</td>
+            <td><strong>Deny all</strong> requests, <strong>report</strong> the push bombing, AND flag any related social engineering messages</td>
+            <td><span class="tag tag-orange">Scenario 2</span></td>
+          </tr>
+          <tr>
+            <td>Voice Social Engineering</td>
+            <td><strong>Hang up</strong> and contact IT through an <strong>independently verified</strong> channel</td>
+            <td><span class="tag tag-cyan">Scenario 3</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>The Critical Insight</h3>
+      <p>In all three scenarios, the optimal action shares a common pattern: <strong>deny the request + independently verify through official channels</strong>. The training reinforces this pattern through repetition across escalating contexts, building the mental model that transfers to novel situations.</p>
+    </section>
+
+    <!-- 4. Learning Experience Design -->
+    <section class="doc-section" id="experience-design">
+      <span class="section-num">04</span>
+      <h2>Learning Experience Design (Action Mapping Step 3)</h2>
+      <p>Each scenario is a practice activity that puts learners into a realistic context where they must perform the target action under conditions that mirror reality.</p>
+
+      <div class="card-grid">
+        <div class="doc-card card-green">
+          <h4>Scenario 1: The Innocent Push</h4>
+          <p>Difficulty: Easy. A single unexpected MFA notification. Tests the fundamental behavior: don't approve what you didn't request.</p>
+        </div>
+        <div class="doc-card card-orange">
+          <h4>Scenario 2: The Pressure Play</h4>
+          <p>Difficulty: Medium. Push bombing + Slack social engineering. Tests behavior under pressure and ability to recognize coordinated attacks.</p>
+        </div>
+        <div class="doc-card card-red">
+          <h4>Scenario 3: The Social Engineer</h4>
+          <p>Difficulty: Hard. A phone call from "IT Support." Tests the hardest skill: resisting a live, persuasive human (or AI voice) requesting MFA approval.</p>
+        </div>
+      </div>
+
+      <h3>Design Principles</h3>
+      <ul class="doc-list">
+        <li><strong>Progressive difficulty</strong> — each scenario adds complexity and psychological pressure</li>
+        <li><strong>Realistic context</strong> — UI mockups of real tools (phone notifications, Slack, phone calls) create immersion</li>
+        <li><strong>Immediate consequences</strong> — learners see the impact of their choice instantly, not in a quiz result</li>
+        <li><strong>Three-choice architecture</strong> — wrong/partial/optimal choices mirror real decision granularity</li>
+        <li><strong>Real-world anchoring</strong> — every scenario maps to an actual breach, making the threat concrete</li>
+      </ul>
+    </section>
+
+    <!-- 5. Gamification Strategy -->
+    <section class="doc-section" id="gamification">
+      <span class="section-num">05</span>
+      <h2>Gamification Strategy</h2>
+      <p>Gamification mechanics are not decorative — each one serves a specific learning purpose.</p>
+
+      <table class="action-table">
+        <thead>
+          <tr>
+            <th>Mechanic</th>
+            <th>Implementation</th>
+            <th>Learning Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Security Score</strong></td>
+            <td>0-100 points, starts at 50. Optimal: +20/25/30, Wrong: -20/25/30, Partial: +5/10</td>
+            <td>Creates stakes and emotional investment in decisions</td>
+          </tr>
+          <tr>
+            <td><strong>Timer Pressure</strong></td>
+            <td>30/25/20 second countdown per scenario (decreasing)</td>
+            <td>Mirrors real attack psychology — attackers create urgency to prevent careful thinking</td>
+          </tr>
+          <tr>
+            <td><strong>Breach Cards</strong></td>
+            <td>Real company breach case study shown after each scenario</td>
+            <td>Concrete proof that these attacks happen to real companies with real consequences</td>
+          </tr>
+          <tr>
+            <td><strong>Final Report Card</strong></td>
+            <td>Personalized assessment with rating, scenario breakdown, and key takeaways</td>
+            <td>Summarizes performance and reinforces correct behaviors</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight-box purple">
+        <h4>Why Timer Pressure Works</h4>
+        <p>The timer isn't just a game mechanic — it's <strong>pedagogically intentional</strong>. Real MFA attacks succeed because they create urgency. By putting learners under time pressure during training, we prepare them for the emotional state they'll experience during an actual attack. If the timer runs out, the worst outcome occurs automatically — teaching that hesitation defaults to compromise.</p>
+      </div>
+    </section>
+
+    <!-- 6. Learner Journey Map -->
+    <section class="doc-section" id="learner-journey">
+      <span class="section-num">06</span>
+      <h2>Learner Journey Map</h2>
+
+      <div class="flow-diagram">
+        <div class="flow-node active">Landing Screen</div>
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-node">Scenario Context</div>
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-node decision">Timed Decision</div>
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-node outcome-good">Consequence</div>
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-node">Breach Card</div>
+      </div>
+
+      <p style="text-align: center; font-size: 0.8rem; color: var(--dim); margin-bottom: 1rem;">&darr; Repeat for 3 scenarios with increasing difficulty &darr;</p>
+
+      <div class="flow-diagram">
+        <div class="flow-node active">Final Report</div>
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-node">Score + Rating</div>
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-node">Key Takeaways</div>
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-node decision">Retry / Exit</div>
+      </div>
+
+      <h3>Emotional Journey</h3>
+      <table class="action-table">
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Learner Emotion</th>
+            <th>Design Response</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Landing</td>
+            <td>Curiosity, mild skepticism</td>
+            <td>Professional design signals quality; "real breach" hook creates intrigue</td>
+          </tr>
+          <tr>
+            <td>Scenario 1</td>
+            <td>Confidence ("I know this")</td>
+            <td>Easy scenario validates knowledge; partial credit option prevents overconfidence</td>
+          </tr>
+          <tr>
+            <td>Scenario 2</td>
+            <td>Pressure, uncertainty</td>
+            <td>Buzzing phone + Slack message creates realistic cognitive overload</td>
+          </tr>
+          <tr>
+            <td>Scenario 3</td>
+            <td>Doubt, caution</td>
+            <td>Phone call transcript creates empathy for social engineering victims</td>
+          </tr>
+          <tr>
+            <td>Report</td>
+            <td>Reflection, resolve</td>
+            <td>Personalized score + takeaways create commitment to behavior change</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 7. AI Integration -->
+    <section class="doc-section" id="ai-integration">
+      <span class="section-num">07</span>
+      <h2>AI Integration Opportunities</h2>
+      <p>AI tools can enhance both the <strong>production</strong> and <strong>personalization</strong> of this training at scale.</p>
+
+      <div class="card-grid">
+        <div class="doc-card card-cyan">
+          <h4>Scenario Generation</h4>
+          <p><strong>Claude / ChatGPT</strong> — Generate unlimited scenario variations from a template structure. Each run-through can present different contexts, names, and details while testing the same target behaviors.</p>
+        </div>
+        <div class="doc-card card-purple">
+          <h4>Voice Synthesis</h4>
+          <p><strong>ElevenLabs</strong> — Generate realistic AI voice clips for the phone call scenario, making the social engineering attempt feel disturbingly real. Multiple voice profiles increase variety.</p>
+        </div>
+        <div class="doc-card card-green">
+          <h4>Video Narration</h4>
+          <p><strong>Synthesia / HeyGen</strong> — Create AI avatar intro/outro videos that contextualize the training and deliver the key takeaways with a human presence.</p>
+        </div>
+        <div class="doc-card card-orange">
+          <h4>Adaptive Difficulty</h4>
+          <p><strong>Custom AI Logic</strong> — Adjust scenario difficulty based on learner performance. Got Scenario 1 right? Skip to harder content. Failed? Add a tutorial scenario first.</p>
+        </div>
+      </div>
+
+      <h3>AI-Enhanced Personalization Pipeline</h3>
+      <ul class="doc-list">
+        <li><strong>Pre-training:</strong> AI analyzes the learner's role (engineer, executive, HR) and generates role-specific scenarios</li>
+        <li><strong>During training:</strong> Adaptive engine adjusts timer, complexity, and hint availability based on performance</li>
+        <li><strong>Post-training:</strong> AI generates personalized follow-up micro-lessons based on specific mistakes made</li>
+        <li><strong>At scale:</strong> LLMs generate fresh scenario content weekly, preventing the "I've seen this before" effect</li>
+      </ul>
+    </section>
+
+    <!-- 8. Technical Architecture -->
+    <section class="doc-section" id="technical-architecture">
+      <span class="section-num">08</span>
+      <h2>Technical Architecture</h2>
+
+      <h3>Current Implementation</h3>
+      <table class="action-table">
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Technology</th>
+            <th>Rationale</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Frontend</td>
+            <td>Vanilla HTML/CSS/JavaScript</td>
+            <td>Zero dependencies = instant loading, no build step, maximum portability</td>
+          </tr>
+          <tr>
+            <td>Styling</td>
+            <td>CSS Custom Properties + Animations</td>
+            <td>Dark theme with CSS variables for easy theming; pure CSS mockups reduce asset loading</td>
+          </tr>
+          <tr>
+            <td>Hosting</td>
+            <td>GitHub Pages (static)</td>
+            <td>Free, instant deployment, shareable URL, no server needed</td>
+          </tr>
+          <tr>
+            <td>State</td>
+            <td>In-memory JavaScript</td>
+            <td>Simple game state (score, choices, current scenario) — no persistence needed for MVP</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Enterprise Deployment Options</h3>
+      <ul class="doc-list">
+        <li><strong>SCORM wrapping:</strong> Package as SCORM 1.2 or 2004 for LMS deployment (Articulate, Cornerstone, etc.)</li>
+        <li><strong>xAPI integration:</strong> Send granular event data (choice selected, time to decision, score) to an LRS</li>
+        <li><strong>SSO integration:</strong> Add SAML/OIDC for enterprise authentication and user tracking</li>
+        <li><strong>API backend:</strong> Add a lightweight API for storing results, generating reports, and managing scenario content</li>
+      </ul>
+    </section>
+
+    <!-- 9. Scalability -->
+    <section class="doc-section" id="scalability">
+      <span class="section-num">09</span>
+      <h2>Scalability</h2>
+      <p>The scenario engine is designed to be <strong>content-agnostic</strong>. The same architecture supports any security awareness topic.</p>
+
+      <div class="card-grid">
+        <div class="doc-card card-cyan">
+          <h4>Phishing Simulation</h4>
+          <p>Email mockups with suspicious links, attachments, and spoofed sender addresses. Teach email inspection habits.</p>
+        </div>
+        <div class="doc-card card-orange">
+          <h4>Vishing (Voice Phishing)</h4>
+          <p>Extended phone scenarios with AI-generated voice. Progressive social engineering with escalating manipulation tactics.</p>
+        </div>
+        <div class="doc-card card-red">
+          <h4>Deepfake Detection</h4>
+          <p>Video call scenarios with AI-generated faces. Teach employees to verify identity through secure channels.</p>
+        </div>
+        <div class="doc-card card-purple">
+          <h4>BEC (Business Email Compromise)</h4>
+          <p>Executive impersonation scenarios. Urgent wire transfer requests, vendor payment changes, gift card scams.</p>
+        </div>
+      </div>
+
+      <h3>Content Expansion Model</h3>
+      <p>Each new topic follows the same formula:</p>
+      <ul class="doc-list">
+        <li>Define 3 escalating scenarios based on real breaches</li>
+        <li>Map each to specific target behaviors (Action Mapping)</li>
+        <li>Build realistic UI mockups (email client, video call, etc.)</li>
+        <li>Include real-world breach case studies for credibility</li>
+        <li>Plug into the existing scoring and reporting engine</li>
+      </ul>
+    </section>
+
+    <!-- 10. Measurement -->
+    <section class="doc-section" id="measurement">
+      <span class="section-num">10</span>
+      <h2>Measurement Framework</h2>
+      <p>Measuring training effectiveness requires tracking both <strong>learning metrics</strong> and <strong>business outcomes</strong>.</p>
+
+      <h3>Learning Metrics (Kirkpatrick Levels 1-2)</h3>
+      <table class="action-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>What It Measures</th>
+            <th>Target</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Completion rate</td>
+            <td>Engagement / relevance</td>
+            <td>&gt; 90% (vs. ~60% for traditional)</td>
+          </tr>
+          <tr>
+            <td>Average security score</td>
+            <td>Knowledge acquisition</td>
+            <td>&gt; 75 on first attempt</td>
+          </tr>
+          <tr>
+            <td>Scenario-level accuracy</td>
+            <td>Specific skill gaps</td>
+            <td>&gt; 80% optimal choice per scenario</td>
+          </tr>
+          <tr>
+            <td>Time to decision</td>
+            <td>Confidence / automaticity</td>
+            <td>&lt; 15 seconds average by retry</td>
+          </tr>
+          <tr>
+            <td>Retry rate</td>
+            <td>Intrinsic motivation</td>
+            <td>&gt; 30% voluntary retry</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Business Metrics (Kirkpatrick Levels 3-4)</h3>
+      <table class="action-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>What It Measures</th>
+            <th>Data Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>MFA incident reports (post-training)</td>
+            <td>Behavior change — are employees reporting suspicious pushes?</td>
+            <td>IT ticketing system</td>
+          </tr>
+          <tr>
+            <td>Phishing sim click rate</td>
+            <td>Transfer of security mindset to related threats</td>
+            <td>Phishing simulation platform</td>
+          </tr>
+          <tr>
+            <td>MFA-related compromises</td>
+            <td>The actual business goal — zero compromises</td>
+            <td>SIEM / incident response logs</td>
+          </tr>
+          <tr>
+            <td>Time to report suspicious activity</td>
+            <td>Response speed improvement</td>
+            <td>IT ticketing system timestamps</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight-box">
+        <h4>ROI Calculation</h4>
+        <p>Average cost of an MFA-related breach: <strong>$4.45M</strong> (IBM Cost of a Data Breach 2023). If this training prevents even one incident, the ROI is effectively infinite compared to the cost of development and deployment.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="doc-footer">
+    <p>
+      Designed by <a href="https://mordecai.web.app" target="_blank">Mordecai Shekwogaza</a>
+      &nbsp;|&nbsp; Learning & AI Content Designer
+      &nbsp;|&nbsp; <a href="https://ng.linkedin.com/in/mordecai-shekwogaza-54506a222" target="_blank">LinkedIn</a>
+      &nbsp;|&nbsp; <a href="mailto:mordecai.a.d@gmail.com">mordecai.a.d@gmail.com</a>
+    </p>
+  </footer>
+
+</body>
+</html>
