@@ -31,5 +31,4 @@ Open `index.html` in any browser. No build step required.
 
 ## Built By
 
-**Mordecai Shekwogaza** — Learning & AI Content Designer
-[Portfolio](https://mordecai.web.app) | [LinkedIn](https://ng.linkedin.com/in/mordecai-shekwogaza-54506a222) | [GitHub](https://github.com/modexanderson)
+Learning & AI Content Designer

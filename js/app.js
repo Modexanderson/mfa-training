@@ -259,7 +259,7 @@ const Game = {
           </a>
         </div>
         <div class="report-footer">
-          <p>Built by <a href="https://mordecai.web.app" target="_blank">Mordecai Shekwogaza</a> &mdash; Learning & AI Content Designer</p>
+          <p>Learning & AI Content Designer</p>
         </div>
       </div>
     `;
